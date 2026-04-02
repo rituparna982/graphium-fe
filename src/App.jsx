@@ -17,6 +17,7 @@ import OAuthCallback from './pages/OAuthCallback';
 import Scholar from './pages/Scholar';
 import UserProfile from './pages/UserProfile';
 import History from './pages/History';
+import LabRoom from './pages/LabRoom';
 
 import React, { useState, useEffect, useRef } from 'react';
 import api from './api/axios';
@@ -203,6 +204,7 @@ export default function App() {
           <Route path="/scholar" element={<ProtectedRoute><Scholar /></ProtectedRoute>} />
           <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
           <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+          <Route path="/lab/:labId" element={<ProtectedRoute><LabRoom /></ProtectedRoute>} />
         </Routes>
       </main>
     </>

@@ -214,9 +214,9 @@ export default function Profile() {
                   </div>
                 ) : (
                   <>
-                    <h1 className="profile-name">{profile.name} <CheckCircle className="badge-verified" /></h1>
+                    <h1 className="profile-name">{profile.name} {user?.isVerified && <CheckCircle className="badge-verified" style={{ color: '#059669' }} />}</h1>
                     <div className="profile-headline">{profile.title}</div>
-                    <div className="profile-location">{profile.institution || 'Research Institute'} • <span className="profile-connections">500+ Collaborators</span></div>
+                    <div className="profile-location">{profile.institution || 'Research Institute'} • <span className="profile-connections">{profile.collaboratorCount || 0} Collaborators</span></div>
                   </>
                 )}
                 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Edit, Send, Circle, MessageSquare as MsgIcon } from 'lucide-react';
+import { Search, Edit, Send, Circle, MessageSquare as MsgIcon, Image as ImageIcon } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
@@ -322,7 +322,21 @@ export default function Messaging() {
                         lineHeight: 1.5,
                         wordBreak: 'break-word',
                       }}>
-                        {msg.content}
+                        {msg.image && (
+                          <img 
+                            src={msg.image} 
+                            alt="Shared" 
+                            style={{ 
+                              maxWidth: '100%', 
+                              maxHeight: 300, 
+                              borderRadius: 8, 
+                              marginBottom: msg.content ? 8 : 0,
+                              cursor: 'pointer'
+                            }} 
+                            onClick={() => window.open(msg.image, '_blank')}
+                          />
+                        )}
+                        {msg.content && <div>{msg.content}</div>}
                       </div>
                       <div style={{
                         fontSize: 11, color: 'var(--text-tertiary)', marginTop: 3,
@@ -345,6 +359,22 @@ export default function Messaging() {
             {/* Input */}
             <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <button 
+                  className="btn-secondary"
+                  style={{ padding: 8, borderRadius: '50%', color: 'var(--text-secondary)' }}
+                  onClick={() => {
+                    const url = window.prompt("Enter image URL:");
+                    if (url) {
+                      socket.emit('send_message', {
+                        receiverId: activeConvo.otherUserId,
+                        content: '',
+                        image: url
+                      });
+                    }
+                  }}
+                >
+                  <ImageIcon size={20} />
+                </button>
                 <input
                   type="text"
                   value={newMsg}
@@ -360,7 +390,7 @@ export default function Messaging() {
                 <button
                   className="btn-primary"
                   onClick={handleSend}
-                  disabled={!newMsg.trim() || !isConnected}
+                  disabled={!newMsg.trim() && !isConnected}
                   style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 24 }}
                 >
                   <Send size={16} /> Send

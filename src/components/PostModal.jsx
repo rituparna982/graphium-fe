@@ -63,7 +63,11 @@ export default function PostModal({ isOpen, onClose, user, profile, onPostSucces
     
     setIsPosting(true);
     try {
-      const payload = { content, category: activeCategory };
+      const payload = { 
+        content, 
+        category: activeCategory,
+        photos: imagePreview ? [imagePreview] : [] 
+      };
 
       // Attach category-specific data
       if (activeCategory === 'paper' && paperFields.title) {
@@ -320,7 +324,11 @@ export default function PostModal({ isOpen, onClose, user, profile, onPostSucces
               ref={fileInputRef}
               onChange={handleImageChange}
             />
-            <ImageIcon className="toolbar-icon" size={20} onClick={() => fileInputRef.current.click()} />
+            <ImageIcon className="toolbar-icon" size={20} onClick={() => {
+              const url = window.prompt("Enter image URL to add to post:");
+              if (url) setImagePreview(url);
+              else fileInputRef.current.click();
+            }} />
             <Video className="toolbar-icon" size={20} />
             <Hash className="toolbar-icon" size={20} />
             <MoreHorizontal className="toolbar-icon" size={20} />

@@ -131,7 +131,35 @@ function PostContent({ item }) {
 
   return (
     <>
-      <div className="post-body">{item.content}</div>
+      {item.content && <div className="post-body">{item.content}</div>}
+      
+      {/* Photo Gallery */}
+      {item.photos?.length > 0 && (
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: item.photos.length === 1 ? '1fr' : '1fr 1fr', 
+          gap: 4, 
+          margin: '12px 0',
+          borderRadius: 8,
+          overflow: 'hidden',
+          border: '1px solid var(--border-color)'
+        }}>
+          {item.photos.map((photo, i) => (
+            <img 
+              key={i} 
+              src={photo} 
+              alt="Post" 
+              style={{ 
+                width: '100%', 
+                height: item.photos.length > 2 ? 150 : 300, 
+                objectFit: 'cover',
+                cursor: 'pointer'
+              }} 
+              onClick={() => window.open(photo, '_blank')}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Category badge */}
       {item.category && item.category !== 'general' && (

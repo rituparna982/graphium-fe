@@ -1,4 +1,6 @@
-import { Download, Quote, Share2, Bookmark, BarChart2, Database, Code } from 'lucide-react';
+import { Download, Quote, Share2, Bookmark, BarChart2, Database, Code, Star } from 'lucide-react';
+import ReviewSystem from '../components/ReviewSystem';
+import React from 'react';
 
 export default function Publication() {
   return (
@@ -33,6 +35,8 @@ export default function Publication() {
             <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 16, color: 'var(--text-primary)' }}>Introduction</h2>
             <p>The intersection of quantum computing and machine learning provides novel avenues for solving classically intractable problems. In this paper, we explore how mapping parameterized quantum circuits to multi-layered perceptrons can identify promising sub-spaces in the objective landscape prior to deployment on actual quantum hardware.</p>
          </div>
+
+         <ReviewSystem targetId="64b0f1c2d3a4e5f6a7b8c9d0" />
       </div>
       <div>
          <div className="card widget-card">
