@@ -245,22 +245,6 @@ export default function Labs() {
             </div>
           );
         })}
-
-        {/* Grants Section */}
-        {user?.grants?.length > 0 && (
-          <div className="card" style={{ padding: 24 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 20 }}>Your Active Grants</h2>
-            {user.grants.map((grant, idx) => (
-              <div key={idx} className="item-card" style={{ marginBottom: idx < user.grants.length - 1 ? 16 : 0 }}>
-                <div className="item-icon" style={{ background: '#fef3c7', color: '#f59e0b' }}><Award /></div>
-                <div className="item-content">
-                  <h3>{grant.name}</h3>
-                  <div className="item-meta">{grant.agency} • {grant.amount} • {grant.period}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Announcement Modal */}

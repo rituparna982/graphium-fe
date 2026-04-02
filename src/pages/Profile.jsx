@@ -12,17 +12,24 @@ import PostModal from '../components/PostModal';
 export default function Profile() {
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState(null);
+  const [posts, setPosts] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' or 'settings'
   const [editMode, setEditMode] = useState(false);
   const [editFields, setEditFields] = useState({});
   const [saving, setSaving] = useState(false);
+  const [follows, setFollows] = useState(0);
 
   useEffect(() => {
-    api.get('/api/profile').then(res => setProfile(res.data)).catch(err => {
-      console.error('[PROFILE] Load error:', err);
-    });
-  }, []);
+    api.get('/api/profile').then(res => {
+      setProfile(res.data);
+      setFollows(res.data.collaboratorCount || 0);
+    }).catch(err => console.error('[PROFILE] Load error:', err));
+
+    api.get(`/api/posts/user/${user?._id || user?.id}`)
+      .then(res => setPosts(res.data.posts || res.data))
+      .catch(err => console.error('[PROFILE] Posts load error:', err));
+  }, [user]);
 
   const handleScholarSync = async () => {
     const authorId = window.prompt("Enter your Google Scholar Author ID (e.g., LSf_mNcAAAAJ):");
@@ -216,47 +223,45 @@ export default function Profile() {
                   <>
                     <h1 className="profile-name">{profile.name} {user?.isVerified && <CheckCircle className="badge-verified" style={{ color: '#059669' }} />}</h1>
                     <div className="profile-headline">{profile.title}</div>
-                    <div className="profile-location">{profile.institution || 'Research Institute'} • <span className="profile-connections">{profile.collaboratorCount || 0} Collaborators</span></div>
-                  </>
-                )}
-                
-                <div className="profile-metrics-ribbon">
-                   <div className="metric-block">
-                     <span className="metric-val">{profile.stats?.hIndex || 0}</span>
-                     <span className="metric-lbl">H-Index</span>
-                   </div>
-                   <div className="metric-block">
-                     <span className="metric-val">{profile.stats?.interest || 0}</span>
-                     <span className="metric-lbl">Interest Score</span>
-                   </div>
-                   <div className="metric-block">
-                     <span className="metric-val">{profile.stats?.citations?.toLocaleString() || 0}</span>
-                     <span className="metric-lbl">Total Citations</span>
-                   </div>
-                   <div className="metric-block">
-                     <span className="metric-val">12</span>
-                     <span className="metric-lbl">Peer Reviews</span>
-                   </div>
-                </div>
+                  <div className="profile-location">{profile.institution || 'Research Institute'} • <span className="profile-connections">{follows} Connections</span></div>
+                </>
+              )}
+              
+              <div className="profile-metrics-ribbon">
+                 <div className="metric-block">
+                   <span className="metric-val">{profile.stats?.hIndex || 0}</span>
+                   <span className="metric-lbl">H-Index</span>
+                 </div>
+                 <div className="metric-block">
+                   <span className="metric-val">{profile.stats?.interest || 0}</span>
+                   <span className="metric-lbl">Interest Score</span>
+                 </div>
+                 <div className="metric-block">
+                   <span className="metric-val">{profile.stats?.citations?.toLocaleString() || 0}</span>
+                   <span className="metric-lbl">Total Citations</span>
+                 </div>
+              </div>
 
-                <div className="profile-actions">
-                  <Link to="/community" style={{ textDecoration: 'none' }}>
-                    <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <UserPlus size={16} /> Find Collaborators
-                    </button>
-                  </Link>
-                  {!editMode && (
-                    <button className="btn-secondary" onClick={startEdit} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Edit3 size={14} /> Edit Profile
-                    </button>
-                  )}
-                  <button className="btn-secondary" onClick={handleScholarSync}>Sync with Scholar</button>
-                  <Link to="/messaging" style={{ textDecoration: 'none' }}>
-                    <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Clock size={16} /> Messages
-                    </button>
-                  </Link>
-                </div>
+              <div className="profile-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <button 
+                  className="btn-primary" 
+                  onClick={() => setFollows(f => f + 1)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <UserPlus size={16} /> Follow
+                </button>
+                {!editMode && (
+                  <button className="btn-secondary" onClick={startEdit} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Edit3 size={14} /> Edit Profile
+                  </button>
+                )}
+                <button className="btn-secondary" onClick={handleScholarSync}>Sync with Scholar</button>
+                <Link to="/messaging" style={{ textDecoration: 'none' }}>
+                  <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Clock size={16} /> Messages
+                  </button>
+                </Link>
+              </div>
               </div>
             </div>
             <div className="card profile-section">
@@ -276,6 +281,26 @@ export default function Profile() {
               )) : (
                 <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>No grants listed yet.</p>
               )}
+                 <div className="card profile-section">
+              <h2 className="section-title"><PenSquare size={18} style={{ marginRight: 8, verticalAlign: -2 }} /> My Posts</h2>
+              {posts.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {posts.map(post => (
+                    <div key={post._id} style={{ padding: 16, border: '1px solid var(--border-color)', borderRadius: 10, background: '#f8fafc' }}>
+                       <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6 }}>{new Date(post.createdAt).toLocaleDateString()}</div>
+                       <p style={{ fontSize: 14, lineHeight: 1.5 }}>{post.content}</p>
+                       {post.photos?.length > 0 && (
+                          <div style={{ marginTop: 10, borderRadius: 8, overflow: 'hidden' }}>
+                            <img src={post.photos[0]} alt="Post" style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }} />
+                          </div>
+                       )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>You haven't posted anything yet.</p>
+              )}
+            </div>
             </div>
             <div className="card profile-section">
               <h2 className="section-title"><BookOpen /> Notable Publications</h2>
@@ -299,14 +324,10 @@ export default function Profile() {
           </div>
           <div>
             <div className="card profile-section" style={{ padding: 24 }}>
-               <h2 className="section-title" style={{ fontSize: 16, marginBottom: 16 }}>Network Spotlight</h2>
-                 <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center' }}>
-                   <div className="share-avatar" style={{ width: 48, height: 48, fontSize: 18, flex: 'none' }}>A</div>
-                   <div style={{ flex: 1 }}>
-                     <div style={{ fontWeight: 600, fontSize: 14 }}>Alice Walker</div>
-                     <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Postdoc Researcher</div>
-                   </div>
-                 </div>
+               <h2 className="section-title" style={{ fontSize: 16, marginBottom: 16 }}>Quick Actions</h2>
+               <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 8 }}>
+                  <PenSquare size={16} /> Share an Update
+               </button>
             </div>
 
             {/* Quick links */}
