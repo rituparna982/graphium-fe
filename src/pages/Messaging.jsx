@@ -87,33 +87,73 @@ export default function Messaging() {
     if (!socket) return;
 
     const handleReceive = (msg) => {
+      const fromMe = msg.sender.toString() === myId.toString();
       // Add to messages if it's the current conversation
-      if (activeConvo && (msg.sender === activeConvo.otherUserId || msg.receiver === activeConvo.otherUserId)) {
-        setMessages(prev => [...prev, msg]);
-        socket.emit('mark_read', { otherUserId: activeConvo.otherUserId });
+      if (activeConvo && (msg.sender.toString() === activeConvo.otherUserId.toString() || msg.receiver.toString() === activeConvo.otherUserId.toString())) {
+        setMessages(prev => {
+          if (prev.find(m => m._id === msg._id)) return prev;
+          return [...prev, msg];
+        });
+        if (!fromMe) socket.emit('mark_read', { otherUserId: activeConvo.otherUserId });
       }
       // Update conversations list
       setConversations(prev => {
-        const otherId = msg.sender === myId ? msg.receiver : msg.sender;
+        const otherId = fromMe ? msg.receiver.toString() : msg.sender.toString();
         const idx = prev.findIndex(c => c.otherUserId.toString() === otherId);
         if (idx >= 0) {
           const updated = [...prev];
-          updated[idx] = { ...updated[idx], lastMessage: msg.content, lastMessageAt: msg.createdAt };
+          updated[idx] = { 
+            ...updated[idx], 
+            lastMessage: msg.content, 
+            lastMessageAt: msg.createdAt,
+            unreadCount: (!fromMe && (!activeConvo || activeConvo.otherUserId !== otherId)) ? (updated[idx].unreadCount + 1) : updated[idx].unreadCount
+          };
           // Move to top
           const item = updated.splice(idx, 1)[0];
           return [item, ...updated];
+        } else {
+          // New conversation from someone
+          return [{
+            conversationId: msg.conversationId,
+            otherUserId: otherId,
+            otherUserName: msg.senderName || 'Researcher', // Note: senderName should ideally be provided by socket emit
+            lastMessage: msg.content,
+            lastMessageAt: msg.createdAt,
+            unreadCount: fromMe ? 0 : 1
+          }, ...prev];
         }
-        return prev;
       });
     };
 
     const handleSent = (msg) => {
-      if (activeConvo && msg.receiver === activeConvo.otherUserId) {
+      if (activeConvo && msg.receiver.toString() === activeConvo.otherUserId.toString()) {
         setMessages(prev => {
           if (prev.find(m => m._id === msg._id)) return prev;
           return [...prev, msg];
         });
       }
+      // Update conversations list for the sender's own UI
+      setConversations(prev => {
+        const otherId = msg.receiver.toString();
+        const idx = prev.findIndex(c => c.otherUserId.toString() === otherId);
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = { ...updated[idx], lastMessage: msg.content, lastMessageAt: msg.createdAt };
+          const item = updated.splice(idx, 1)[0];
+          return [item, ...updated];
+        } else {
+          // New conversation - trigger a refresh for this contact
+          api.get(`/api/messages/${otherId}`).then(res => setMessages(res.data));
+          return [{
+            conversationId: msg.conversationId,
+            otherUserId: msg.receiver,
+            otherUserName: activeConvo?.otherUserName || 'User',
+            lastMessage: msg.content,
+            lastMessageAt: msg.createdAt,
+            unreadCount: 0
+          }, ...prev];
+        }
+      });
     };
 
     const handleTyping = ({ userId }) => {
