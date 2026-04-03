@@ -106,7 +106,7 @@ export default function Messaging() {
           const updated = [...prev];
           updated[idx] = { 
             ...updated[idx], 
-            lastMessage: msg.content, 
+            lastMessage: msg.content || (msg.image ? 'Sent an image' : ''), 
             lastMessageAt: msg.createdAt,
             unreadCount: (!fromMe && (!activeConvo || activeConvo.otherUserId !== otherId)) ? (updated[idx].unreadCount + 1) : updated[idx].unreadCount
           };
@@ -118,8 +118,8 @@ export default function Messaging() {
           return [{
             conversationId: msg.conversationId,
             otherUserId: otherId,
-            otherUserName: msg.senderName || 'Researcher', // Note: senderName should ideally be provided by socket emit
-            lastMessage: msg.content,
+            otherUserName: msg.senderName || 'Researcher',
+            lastMessage: msg.content || (msg.image ? 'Sent an image' : ''),
             lastMessageAt: msg.createdAt,
             unreadCount: fromMe ? 0 : 1
           }, ...prev];
@@ -140,7 +140,7 @@ export default function Messaging() {
         const idx = prev.findIndex(c => c.otherUserId.toString() === otherId);
         if (idx >= 0) {
           const updated = [...prev];
-          updated[idx] = { ...updated[idx], lastMessage: msg.content, lastMessageAt: msg.createdAt };
+          updated[idx] = { ...updated[idx], lastMessage: msg.content || (msg.image ? 'Sent an image' : ''), lastMessageAt: msg.createdAt };
           const item = updated.splice(idx, 1)[0];
           return [item, ...updated];
         } else {
@@ -150,7 +150,7 @@ export default function Messaging() {
             conversationId: msg.conversationId,
             otherUserId: msg.receiver,
             otherUserName: activeConvo?.otherUserName || 'User',
-            lastMessage: msg.content,
+            lastMessage: msg.content || (msg.image ? 'Sent an image' : ''),
             lastMessageAt: msg.createdAt,
             unreadCount: 0
           }, ...prev];
