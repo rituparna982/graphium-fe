@@ -121,8 +121,17 @@ export default function Conferences() {
         <div className="card" style={{ padding: 24, marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showSubmit ? 20 : 0 }}>
             <h2 style={{ fontSize: 20, fontWeight: 700 }}>Author Dashboard</h2>
-            <button className="btn-primary" onClick={() => setShowSubmit(!showSubmit)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Plus size={16} /> {showSubmit ? 'Cancel' : 'Submit Paper'}
+            <button 
+              className={showSubmit ? "btn-secondary" : "btn-primary"} 
+              onClick={() => setShowSubmit(!showSubmit)} 
+              style={{ 
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: showSubmit ? '#ef4444' : undefined,
+                color: showSubmit ? 'white' : 'white',
+                borderColor: showSubmit ? '#ef4444' : undefined
+              }}
+            >
+              {!showSubmit && <Plus size={16} />} {showSubmit ? 'Cancel' : 'Submit Paper'}
             </button>
           </div>
 
@@ -138,7 +147,7 @@ export default function Conferences() {
                 <textarea placeholder="Abstract (optional)" value={newPaper.abstract} onChange={e => setNewPaper({ ...newPaper, abstract: e.target.value })} rows={3}
                   style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 14, resize: 'vertical' }} />
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                  <button className="btn-secondary" onClick={() => setShowSubmit(false)}>Cancel</button>
+                  <button className="btn-secondary" onClick={() => setShowSubmit(false)} style={{ color: '#ef4444', borderColor: '#fecaca' }}>Cancel</button>
                   <button className="btn-primary" onClick={submitPaper} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Send size={14} /> Submit
                   </button>
@@ -237,7 +246,7 @@ export default function Conferences() {
                       style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 14, resize: 'vertical', marginBottom: 12 }}
                     />
                     <div style={{ display: 'flex', gap: 10 }}>
-                      <button className="btn-secondary" onClick={() => { setRevisingId(null); setRevisionNote(''); }}>Cancel</button>
+                      <button className="btn-secondary" onClick={() => { setRevisingId(null); setRevisionNote(''); }} style={{ color: '#ef4444', borderColor: '#fecaca' }}>Cancel</button>
                       <button className="btn-primary" onClick={() => submitRevision(paper._id)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Send size={13} /> Submit Revision
                       </button>
