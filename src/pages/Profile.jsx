@@ -8,6 +8,7 @@ import {
   Mail, Key, Activity, HelpCircle, LogOut, Edit3, Save, X
 } from 'lucide-react';
 import PostModal from '../components/PostModal';
+import SettingsTab from '../components/SettingsTab';
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -83,44 +84,9 @@ export default function Profile() {
 
   if (!profile) return <div className="loading-state">Loading...</div>;
 
-  const settingsGroups = [
-    {
-      title: 'Account',
-      icon: User,
-      items: [
-        { label: 'Email', value: user?.email || 'Not set', icon: Mail },
-        { label: 'User ID', value: user?._id?.substring(0, 12) + '...' || 'Unknown', icon: Key },
-        { label: 'Account Type', value: user?.role || 'researcher', icon: Shield },
-        { label: 'Member Since', value: user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown', icon: Clock },
-      ]
-    },
-    {
-      title: 'Activity',
-      icon: Activity,
-      items: [
-        { label: 'Activity History', value: 'View all actions', icon: Clock, link: '/history' },
-        { label: 'Last Login', value: user?.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Now', icon: LogOut },
-      ]
-    },
-    {
-      title: 'Preferences',
-      icon: Settings,
-      items: [
-        { label: 'Visibility', value: 'Public', icon: Eye },
-        { label: 'Notifications', value: 'Enabled', icon: Bell },
-        { label: 'Theme', value: 'System Default', icon: Moon },
-        { label: 'Language', value: 'English', icon: Globe },
-      ]
-    },
-    {
-      title: 'Support',
-      icon: HelpCircle,
-      items: [
-        { label: 'Help Center', value: 'Get support', icon: HelpCircle },
-        { label: 'Privacy Policy', value: 'View', icon: Shield },
-      ]
-    },
-  ];
+  if (!profile) return <div className="loading-state">Loading...</div>;
+
+  // Replaced static settingsGroups with dynamic SettingsTab component
 
   return (
     <div className="profile-view">
@@ -346,85 +312,7 @@ export default function Profile() {
         </div>
       ) : (
         /* ── SETTINGS TAB ── */
-        <div style={{ maxWidth: 700 }}>
-          {settingsGroups.map((group, gi) => {
-            const GroupIcon = group.icon;
-            return (
-              <div key={gi} className="card" style={{ padding: 20, marginBottom: 16 }}>
-                <h3 style={{ 
-                  fontSize: 15, fontWeight: 700, marginBottom: 16, 
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  paddingBottom: 12, borderBottom: '1px solid var(--border-color)'
-                }}>
-                  <GroupIcon size={18} color="var(--accent-color)" /> {group.title}
-                </h3>
-                {group.items.map((item, ii) => {
-                  const ItemIcon = item.icon;
-                  const content = (
-                    <div 
-                      key={ii} 
-                      style={{ 
-                        display: 'flex', alignItems: 'center', gap: 14, 
-                        padding: '14px 4px',
-                        borderBottom: ii < group.items.length - 1 ? '1px solid #f1f5f9' : 'none',
-                        cursor: item.link ? 'pointer' : 'default',
-                        transition: 'background 0.15s',
-                      }}
-                    >
-                      <div style={{ 
-                        width: 36, height: 36, borderRadius: 8, 
-                        background: '#f1f5f9', 
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        flexShrink: 0
-                      }}>
-                        <ItemIcon size={16} color="var(--text-secondary)" />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{item.label}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{item.value}</div>
-                      </div>
-                      <ChevronRight size={16} color="var(--text-tertiary)" />
-                    </div>
-                  );
-
-                  if (item.link) {
-                    return (
-                      <Link key={ii} to={item.link} style={{ textDecoration: 'none', color: 'inherit' }}>
-                        {content}
-                      </Link>
-                    );
-                  }
-                  return <div key={ii}>{content}</div>;
-                })}
-              </div>
-            );
-          })}
-
-          {/* Logout button in settings */}
-          <div className="card" style={{ padding: 20, marginBottom: 16 }}>
-            <button 
-              onClick={logout}
-              style={{ 
-                width: '100%', padding: '14px', borderRadius: 10, 
-                border: '1px solid #fecaca', background: '#fff5f5', 
-                color: '#ef4444', fontWeight: 600, fontSize: 15, 
-                cursor: 'pointer', display: 'flex', alignItems: 'center', 
-                justifyContent: 'center', gap: 8,
-                transition: 'background 0.2s'
-              }}
-            >
-              <LogOut size={18} /> Log Out
-            </button>
-          </div>
-
-          {/* Dev mode notice */}
-          <div style={{ 
-            textAlign: 'center', padding: 16, fontSize: 12, 
-            color: 'var(--text-tertiary)', fontStyle: 'italic' 
-          }}>
-            🔧 Development Mode — Some settings are display-only
-          </div>
-        </div>
+        <SettingsTab />
       )}
     </div>
   );
