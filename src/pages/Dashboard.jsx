@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { Microscope, Database, Calendar, TrendingUp, ThumbsUp, MessageSquare, Bookmark, Quote, Globe, FileText, CheckCircle, Edit, Library, Clock, PenSquare, Share2, BookOpen, HelpCircle, Award, Newspaper, ExternalLink, Tag, Repeat2, Send, X, Image as ImageIcon } from 'lucide-react';
+import { Microscope, Database, Calendar, TrendingUp, ThumbsUp, MessageSquare, Bookmark, Quote, Globe, FileText, CheckCircle, Edit, Library, Clock, PenSquare, Share2, BookOpen, HelpCircle, Award, Newspaper, ExternalLink, Tag, Repeat2, Send, X, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react';
 import PostModal from '../components/PostModal';
 import QuickShareModal from '../components/QuickShareModal';
 
@@ -188,6 +188,29 @@ function PostContent({ item }) {
       )}
 
       <CategoryCard item={item} />
+      
+      {/* AI Summary Section */}
+      {item.aiSummary && (
+        <div style={{
+          marginTop: 16,
+          padding: 16,
+          background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+          borderRadius: 12,
+          border: '1px solid #ddd6fe',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, color: '#7c3aed', fontWeight: 700, fontSize: 13 }}>
+            <Sparkles size={16} /> AI Research Insights
+          </div>
+          <div style={{ fontSize: 13, lineHeight: 1.6, color: '#4c1d95', fontWeight: 500 }}>
+            {item.aiSummary}
+          </div>
+          <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.05 }}>
+            <Sparkles size={64} color="#7c3aed" />
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -210,6 +233,12 @@ export default function Dashboard() {
   const [sendPostId, setSendPostId] = useState(null);
   const [sendUserSearch, setSendUserSearch] = useState('');
   const [usersList, setUsersList] = useState([]);
+  const [summarizingIds, setSummarizingIds] = useState(new Set());
+  
+  // PDF Summarizer Studio
+  const [pdfSummarizing, setPdfSummarizing] = useState(false);
+  const [pdfResult, setPdfResult] = useState(null);
+  const pdfInputRef = React.useRef(null);
 
   const fetchData = async () => {
     try {
@@ -321,6 +350,51 @@ export default function Dashboard() {
     }
   };
 
+  const handleSummarize = async (postId) => {
+    if (summarizingIds.has(postId)) return;
+    
+    setSummarizingIds(prev => new Set(prev).add(postId));
+    try {
+      const res = await api.post(`/api/posts/${postId}/summarize`);
+      if (res.data.aiSummary) {
+        setFeed(prev => prev.map(p => (p._id || p.id) === postId ? { ...p, aiSummary: res.data.aiSummary } : p));
+      }
+    } catch (err) {
+      console.error('[AI] Summarize failed:', err);
+      alert('AI Summarization failed. Please ensure the API is configured correctly.');
+    }
+    setSummarizingIds(prev => {
+      const next = new Set(prev);
+      next.delete(postId);
+      return next;
+    });
+  };
+
+  const handlePdfUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || file.type !== 'application/pdf') {
+      alert('Please select a valid PDF file.');
+      return;
+    }
+
+    setPdfResult(null);
+    setPdfSummarizing(true);
+    
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const res = await api.post('/api/posts/summarize-pdf', { pdfData: reader.result });
+        setPdfResult(res.data.summary);
+      } catch (err) {
+        console.error('[AI STUDIO] PDF Error:', err);
+        alert('AI was unable to process this PDF. Ensure it is not password protected.');
+      } finally {
+        setPdfSummarizing(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const toggleCommentLike = async (postId, commentId) => {
     try {
       const res = await api.post(`/api/posts/comment/${commentId}/like`);
@@ -352,6 +426,57 @@ export default function Dashboard() {
     <div className="core-rail">
       {/* Left Column */}
       <div>
+        {/* AI Research Studio Widget */}
+        <div className="card" style={{ marginBottom: 16, overflow: 'hidden', border: '1px solid #ddd6fe' }}>
+          <div style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)', padding: '16px', color: 'white' }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Sparkles size={18} /> AI Research Studio
+            </h3>
+            <p style={{ fontSize: 11, margin: '8px 0 0', opacity: 0.9 }}>Summarize any PDF paper instantly</p>
+          </div>
+          
+          <div style={{ padding: 16 }}>
+            {!pdfResult && !pdfSummarizing ? (
+              <div 
+                onClick={() => pdfInputRef.current?.click()}
+                style={{
+                  border: '2px dashed #ddd6fe',
+                  borderRadius: 12,
+                  padding: '24px 16px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = '#f5f3ff'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <BookOpen size={32} color="#7c3aed" style={{ marginBottom: 12, opacity: 0.6 }} />
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#4c1d95' }}>Upload PDF Paper</div>
+                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>Gemini 1.5 Flash Doc AI</div>
+                <input type="file" accept=".pdf" ref={pdfInputRef} style={{ display: 'none' }} onChange={handlePdfUpload} />
+              </div>
+            ) : pdfSummarizing ? (
+              <div style={{ padding: '24px 16px', textAlign: 'center' }}>
+                <Loader2 size={32} className="animate-spin" color="#7c3aed" style={{ marginBottom: 12 }} />
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#7c3aed' }}>AI is Reading Paper...</div>
+                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>Extracting core insights...</div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ background: '#f5f3ff', borderRadius: 10, padding: 14, fontSize: 12, lineHeight: 1.6, color: '#4c1d95', maxHeight: 300, overflowY: 'auto' }}>
+                  {pdfResult}
+                </div>
+                <button 
+                  onClick={() => { setPdfResult(null); }}
+                  style={{ width: '100%', marginTop: 12, padding: '8px', borderRadius: 8, background: '#ede9fe', color: '#7c3aed', border: 'none', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}
+                >
+                  Clear & Process New
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="card mini-profile-card">
           <div 
             className="mini-profile-header" 
@@ -465,6 +590,10 @@ export default function Dashboard() {
             <div className="share-action-item" onClick={() => setIsModalOpen(true)}>
               <Newspaper size={20} color="#e06847" />
               <span>Article</span>
+            </div>
+            <div className="share-action-item" onClick={() => pdfInputRef.current?.click()} style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8 }}>
+              <Sparkles size={20} color="#7c3aed" />
+              <span style={{ color: '#7c3aed', fontWeight: 700 }}>AI Summarize PDF</span>
             </div>
           </div>
         </div>
@@ -584,6 +713,20 @@ export default function Dashboard() {
                 >
                   <Send size={18}/> Send
                 </button>
+                {(item.content?.length > 100 || item.paper || item.article) && !item.aiSummary && (
+                  <button 
+                    className="post-action-btn"
+                    onClick={() => handleSummarize(item._id || item.id)}
+                    disabled={summarizingIds.has(item._id || item.id)}
+                    style={{ color: '#7c3aed', fontWeight: 600 }}
+                  >
+                    {summarizingIds.has(item._id || item.id) ? (
+                      <><Loader2 size={18} className="animate-spin" style={{ marginRight: 6 }} /> AI Reading...</>
+                    ) : (
+                      <><Sparkles size={18} style={{ marginRight: 6 }} /> AI Summarize</>
+                    )}
+                  </button>
+                )}
                 <button 
                   className="post-action-btn"
                   onClick={() => toggleSave(item._id || item.id)}

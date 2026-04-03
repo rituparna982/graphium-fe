@@ -324,11 +324,12 @@ export default function PostModal({ isOpen, onClose, user, profile, onPostSucces
               ref={fileInputRef}
               onChange={handleImageChange}
             />
-            <ImageIcon className="toolbar-icon" size={20} onClick={() => {
-              const url = window.prompt("Enter image URL to add to post:");
-              if (url) setImagePreview(url);
-              else fileInputRef.current.click();
-            }} />
+            <ImageIcon 
+              className="toolbar-icon" 
+              size={20} 
+              onClick={() => fileInputRef.current.click()} 
+              style={{ cursor: 'pointer' }}
+            />
             <Video className="toolbar-icon" size={20} />
             <Hash className="toolbar-icon" size={20} />
             <MoreHorizontal className="toolbar-icon" size={20} />
@@ -342,11 +343,11 @@ export default function PostModal({ isOpen, onClose, user, profile, onPostSucces
             <button 
               className="btn-primary" 
               onClick={handleSubmit}
-              disabled={(!content.trim() && !image) || isPosting}
+              disabled={(!content.trim() && !imagePreview) || isPosting}
               style={{
                 borderRadius: '24px',
                 padding: '6px 16px',
-                opacity: (!content.trim() && !image) ? 0.5 : 1
+                opacity: (!content.trim() && !imagePreview) ? 0.5 : 1
               }}
             >
               {isPosting ? 'Posting...' : 'Post'}
