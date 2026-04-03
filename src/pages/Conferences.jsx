@@ -122,16 +122,11 @@ export default function Conferences() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showSubmit ? 20 : 0 }}>
             <h2 style={{ fontSize: 20, fontWeight: 700 }}>Author Dashboard</h2>
             <button 
-              className={showSubmit ? "btn-secondary" : "btn-primary"} 
+              className="btn-primary" 
               onClick={() => setShowSubmit(!showSubmit)} 
-              style={{ 
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: showSubmit ? '#ef4444' : undefined,
-                color: showSubmit ? 'white' : 'white',
-                borderColor: showSubmit ? '#ef4444' : undefined
-              }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
             >
-              {!showSubmit && <Plus size={16} />} {showSubmit ? 'Cancel' : 'Submit Paper'}
+              <Plus size={16} /> Submit Paper
             </button>
           </div>
 
