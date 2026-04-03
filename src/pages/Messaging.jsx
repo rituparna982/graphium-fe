@@ -25,10 +25,12 @@ export default function Messaging() {
   const [activeConvo, setActiveConvo] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
   const typingTimeout = useRef(null);
   const myId = user?._id || user?.id;
 
@@ -186,13 +188,15 @@ export default function Messaging() {
   }, [messages]);
 
   const handleSend = () => {
-    if (!newMsg.trim() || !socket || !activeConvo) return;
+    if ((!newMsg.trim() && !selectedImage) || !socket || !activeConvo) return;
     socket.emit('send_message', {
       receiverId: activeConvo.otherUserId,
       content: newMsg.trim(),
+      image: selectedImage
     });
     socket.emit('stop_typing', { receiverId: activeConvo.otherUserId });
     setNewMsg('');
+    setSelectedImage(null);
   };
 
   const handleKeyDown = (e) => {
@@ -362,20 +366,33 @@ export default function Messaging() {
                         lineHeight: 1.5,
                         wordBreak: 'break-word',
                       }}>
-                        {msg.image && (
-                          <img 
-                            src={msg.image} 
-                            alt="Shared" 
-                            style={{ 
-                              maxWidth: '100%', 
-                              maxHeight: 300, 
-                              borderRadius: 8, 
-                              marginBottom: msg.content ? 8 : 0,
-                              cursor: 'pointer'
-                            }} 
-                            onClick={() => window.open(msg.image, '_blank')}
-                          />
-                        )}
+                         {msg.image && (
+                           <div style={{ 
+                             margin: '-10px -16px 8px -16px',
+                             overflow: 'hidden',
+                             borderTopLeftRadius: isMine ? 18 : 18,
+                             borderTopRightRadius: isMine ? 18 : 18,
+                             borderBottomLeftRadius: isMine ? 4 : 18,
+                             borderBottomRightRadius: isMine ? 18 : 4,
+                           }}>
+                             <img 
+                               src={msg.image} 
+                               alt="Shared" 
+                               style={{ 
+                                 width: '100%',
+                                 maxWidth: 320, 
+                                 display: 'block',
+                                 maxHeight: 400, 
+                                 objectFit: 'cover',
+                                 cursor: 'pointer',
+                                 transition: 'transform 0.3s ease'
+                               }} 
+                               onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                               onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                               onClick={() => window.open(msg.image, '_blank')}
+                             />
+                           </div>
+                         )}
                         {msg.content && <div>{msg.content}</div>}
                       </div>
                       <div style={{
@@ -398,43 +415,115 @@ export default function Messaging() {
 
             {/* Input */}
             <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-color)' }}>
+              {/* Image Preview */}
+              {selectedImage && (
+                <div style={{ position: 'relative', marginBottom: 12, display: 'inline-block' }}>
+                  <img src={selectedImage} alt="Selected" style={{ maxHeight: 100, borderRadius: 8, border: '1px solid var(--border-color)' }} />
+                  <button 
+                    onClick={() => setSelectedImage(null)}
+                    style={{ position: 'absolute', top: -8, right: -8, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <button 
-                  className="btn-secondary"
-                  style={{ padding: 8, borderRadius: '50%', color: 'var(--text-secondary)' }}
-                  onClick={() => {
-                    const url = window.prompt("Enter image URL:");
-                    if (url) {
-                      socket.emit('send_message', {
-                        receiverId: activeConvo.otherUserId,
-                        content: '',
-                        image: url
-                      });
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  style={{ display: 'none' }} 
+                  ref={fileInputRef}
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => setSelectedImage(reader.result);
+                      reader.readAsDataURL(file);
                     }
                   }}
-                >
-                  <ImageIcon size={20} />
-                </button>
-                <input
-                  type="text"
-                  value={newMsg}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Write a message..."
-                  style={{
-                    flex: 1, padding: '12px 18px', borderRadius: 24,
-                    border: '1px solid var(--border-color)', outline: 'none',
-                    fontSize: 14, background: '#f8fafc',
-                  }}
                 />
+                <div style={{ position: 'relative' }}>
+                  <button 
+                    className="btn-secondary"
+                    title="Attachments"
+                    style={{ 
+                      padding: 10, 
+                      borderRadius: '50%', 
+                      color: 'var(--text-secondary)', 
+                      background: '#f1f5f9',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                    onClick={() => fileInputRef.current.click()}
+                  >
+                    <ImageIcon size={22} color="#0284c7" />
+                  </button>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    style={{ display: 'none' }} 
+                    ref={fileInputRef}
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => setSelectedImage(reader.result);
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </div>
+
+                <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={newMsg}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Type a message..."
+                    style={{
+                      flex: 1, 
+                      padding: '12px 18px', 
+                      borderRadius: 24,
+                      border: '1px solid var(--border-color)', 
+                      outline: 'none',
+                      fontSize: 14, 
+                      background: '#f8fafc',
+                      transition: 'all 0.2s',
+                    }}
+                    onFocus={(e) => { e.target.style.borderColor = 'var(--accent-color)'; e.target.style.background = 'white'; }}
+                    onBlur={(e) => { e.target.style.borderColor = 'var(--border-color)'; e.target.style.background = '#f8fafc'; }}
+                  />
+                </div>
+
                 <button
                   className="btn-primary"
                   onClick={handleSend}
-                  disabled={!newMsg.trim() && !isConnected}
-                  style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 24 }}
+                  disabled={(!newMsg.trim() && !selectedImage) || !isConnected}
+                  style={{ 
+                    padding: '10px 20px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 8, 
+                    borderRadius: 24,
+                    background: (!newMsg.trim() && !selectedImage) ? '#cbd5e1' : 'var(--accent-color)',
+                    border: 'none',
+                    fontWeight: 600,
+                    transition: 'all 0.2s'
+                  }}
                 >
-                  <Send size={16} /> Send
+                  <Send size={18} /> Send
                 </button>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, paddingLeft: 56 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#0284c7' }}></div>
+                  Direct access to: <span style={{ color: '#0284c7', fontWeight: 600 }}>OneDrive\Pictures</span>
+                </div>
               </div>
             </div>
           </>

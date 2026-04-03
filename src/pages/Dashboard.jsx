@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { Microscope, Database, Calendar, TrendingUp, ThumbsUp, MessageSquare, Bookmark, Quote, Globe, FileText, CheckCircle, Edit, Library, Clock, PenSquare, Share2, BookOpen, HelpCircle, Award, Newspaper, ExternalLink, Tag, Repeat2, Send, X } from 'lucide-react';
+import { Microscope, Database, Calendar, TrendingUp, ThumbsUp, MessageSquare, Bookmark, Quote, Globe, FileText, CheckCircle, Edit, Library, Clock, PenSquare, Share2, BookOpen, HelpCircle, Award, Newspaper, ExternalLink, Tag, Repeat2, Send, X, Image as ImageIcon } from 'lucide-react';
 import PostModal from '../components/PostModal';
+import QuickShareModal from '../components/QuickShareModal';
 
 // Helper: format timestamps as relative time ("2 mins ago", "3 hours ago", etc.)
 function timeAgo(dateString) {
@@ -192,9 +193,11 @@ function PostContent({ item }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [postContent, setPostContent] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [feed, setFeed] = useState([]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -350,15 +353,39 @@ export default function Dashboard() {
       {/* Left Column */}
       <div>
         <div className="card mini-profile-card">
-          <div className="mini-profile-bg"></div>
-          <div className="mini-profile-avatar">{user?.name?.charAt(0) || 'U'}</div>
-          <div className="mini-profile-name">{user?.name || 'Researcher'}</div>
-          <div className="mini-profile-title">{profile?.title || 'Researcher'}</div>
-          <div className="mini-profile-stats">
+          <div 
+            className="mini-profile-header" 
+            onClick={() => navigate('/profile')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'background 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <div className="mini-profile-bg"></div>
+            <div className="mini-profile-avatar">{user?.name?.charAt(0) || 'U'}</div>
+            <div className="mini-profile-name" style={{ color: 'var(--accent-color)', textDecoration: 'underline' }}>
+              {user?.name || 'Researcher'}
+            </div>
+            <div className="mini-profile-title">{profile?.title || 'Researcher'}</div>
+          </div>
+          
+          <div className="mini-profile-stats" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
             <div className="stat-row"><span>H-Index</span><span className="stat-value">{profile?.stats?.hIndex || 0}</span></div>
             <div className="stat-row"><span>Total Citations</span><span className="stat-value">{profile?.stats?.citations?.toLocaleString() || 0}</span></div>
           </div>
-          <div className="stat-row" style={{ padding: 16, justifyContent: 'flex-start', gap: 8, borderTop: '1px solid var(--border-color)' }}>
+          <div 
+            className="stat-row" 
+            onClick={() => navigate('/profile')}
+            style={{ 
+              padding: '12px 16px', 
+              justifyContent: 'flex-start', 
+              gap: 8, 
+              borderTop: '1px solid var(--border-color)',
+              cursor: 'pointer'
+            }}
+          >
              <Library size={18} /> My Library
           </div>
         </div>
@@ -407,9 +434,9 @@ export default function Dashboard() {
       <div>
         <div className="card share-box share-box-v2">
           <div className="share-bar">
-            <div className="share-avatar" style={{ width: 48, height: 48, fontSize: 20 }}>
+            <Link to="/profile" className="share-avatar" style={{ width: 48, height: 48, fontSize: 20, textDecoration: 'none', cursor: 'pointer' }}>
               {user?.name?.charAt(0) || 'U'}
-            </div>
+            </Link>
             <button className="share-trigger" onClick={() => setIsModalOpen(true)}>
               Start a post
             </button>
@@ -428,11 +455,25 @@ export default function Dashboard() {
               <span>Event</span>
             </div>
             <div className="share-action-item" onClick={() => setIsModalOpen(true)}>
+              <ImageIcon size={20} color="#3b82f6" />
+              <span>Image</span>
+            </div>
+            <div className="share-action-item" onClick={() => setIsShareModalOpen(true)}>
+              <Send size={20} color="#f59e0b" />
+              <span>Choose & Share Image</span>
+            </div>
+            <div className="share-action-item" onClick={() => setIsModalOpen(true)}>
               <Newspaper size={20} color="#e06847" />
               <span>Article</span>
             </div>
           </div>
         </div>
+
+        <QuickShareModal 
+          isOpen={isShareModalOpen} 
+          onClose={() => setIsShareModalOpen(false)} 
+          user={user} 
+        />
 
         <PostModal 
           isOpen={isModalOpen} 

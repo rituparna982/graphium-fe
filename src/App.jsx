@@ -167,7 +167,7 @@ export default function App() {
                 <>
                   <Link to="/profile" className={`nav-item me-nav-item ${isActive('/profile')}`}>
                     <div className="me-avatar">{user?.name?.charAt(0) || 'U'}</div>
-                    <span className="nav-text">Me <ChevronDown style={{width: 12, height: 12, marginLeft: 2}}/></span>
+                    <span className="nav-text">{user?.name || 'Me'} <ChevronDown style={{width: 12, height: 12, marginLeft: 2}}/></span>
                   </Link>
                   <button className="nav-item" onClick={logout} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>
                     <LogOut size={20} />
