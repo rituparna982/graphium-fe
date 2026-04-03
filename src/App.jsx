@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Home, Users, BookOpen, Microscope, Calendar, MessageSquare, Bell, ChevronDown, LogOut, Clock, Sparkles } from 'lucide-react';
+import { Search, Home, Users, BookOpen, Microscope, Calendar, MessageSquare, Bell, ChevronDown, LogOut, Clock, Settings } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import logo from './assets/logo.png';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -17,10 +17,7 @@ import OAuthCallback from './pages/OAuthCallback';
 import Scholar from './pages/Scholar';
 import UserProfile from './pages/UserProfile';
 import History from './pages/History';
-import LabRoom from './pages/LabRoom';
-import AiStudio from './pages/AiStudio';
-import AiSummarizerModal from './components/AiSummarizerModal';
-import AiChatbot from './components/AiChatbot';
+import SettingsPage from './pages/Settings';
 
 import React, { useState, useEffect, useRef } from 'react';
 import api from './api/axios';
@@ -32,7 +29,6 @@ export default function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const searchRef = useRef(null);
   const { isAuthenticated, user, logout, isLoading } = useAuth();
   const isActive = (path) => location.pathname === path ? 'active' : '';
@@ -159,24 +155,6 @@ export default function App() {
                 <MessageSquare />
                 <span className="nav-text">Messaging</span>
               </Link>
-              
-              <button 
-                onClick={() => navigate('/ai-studio')}
-                className="nav-item ai-nav-pill"
-                style={{ 
-                  background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)', 
-                  borderRadius: 12, border: 'none', color: 'white', cursor: 'pointer',
-                  padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8,
-                  boxShadow: '0 4px 6px -1px rgba(124, 58, 237, 0.4)',
-                  marginLeft: 12, marginRight: 12, transition: 'all 0.2s'
-                }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(124, 58, 237, 0.5)'; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(124, 58, 237, 0.4)'; }}
-              >
-                <Sparkles size={18} />
-                <span className="nav-text" style={{ color: 'white', fontWeight: 800 }}>AI Studio</span>
-              </button>
-
               <Link to="/notifications" className={`nav-item ${isActive('/notifications')}`}>
                 <Bell />
                 <span className="nav-text">Notifications</span>
@@ -185,11 +163,15 @@ export default function App() {
                 <Clock />
                 <span className="nav-text">History</span>
               </Link>
+              <Link to="/settings" className={`nav-item ${isActive('/settings')}`}>
+                <Settings />
+                <span className="nav-text">Settings</span>
+              </Link>
               {isAuthenticated ? (
                 <>
                   <Link to="/profile" className={`nav-item me-nav-item ${isActive('/profile')}`}>
                     <div className="me-avatar">{user?.name?.charAt(0) || 'U'}</div>
-                    <span className="nav-text">{user?.name || 'Me'} <ChevronDown style={{width: 12, height: 12, marginLeft: 2}}/></span>
+                    <span className="nav-text">Me <ChevronDown style={{width: 12, height: 12, marginLeft: 2}}/></span>
                   </Link>
                   <button className="nav-item" onClick={logout} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>
                     <LogOut size={20} />
@@ -226,16 +208,9 @@ export default function App() {
           <Route path="/scholar" element={<ProtectedRoute><Scholar /></ProtectedRoute>} />
           <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
           <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
-          <Route path="/lab/:labId" element={<ProtectedRoute><LabRoom /></ProtectedRoute>} />
-          <Route path="/ai-studio" element={<ProtectedRoute><AiStudio /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         </Routes>
       </main>
-      <AiSummarizerModal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} />
-      
-      {/* Universal AI Research Assistant (Chatbot) */}
-      {isAuthenticated && !isAuthPage && (
-        <AiChatbot onOpenStudio={() => navigate('/ai-studio')} />
-      )}
     </>
   );
 }

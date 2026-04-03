@@ -25,12 +25,10 @@ export default function Messaging() {
   const [activeConvo, setActiveConvo] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState('');
-  const [selectedImage, setSelectedImage] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
   const typingTimeout = useRef(null);
   const myId = user?._id || user?.id;
 
@@ -89,73 +87,33 @@ export default function Messaging() {
     if (!socket) return;
 
     const handleReceive = (msg) => {
-      const fromMe = msg.sender.toString() === myId.toString();
       // Add to messages if it's the current conversation
-      if (activeConvo && (msg.sender.toString() === activeConvo.otherUserId.toString() || msg.receiver.toString() === activeConvo.otherUserId.toString())) {
-        setMessages(prev => {
-          if (prev.find(m => m._id === msg._id)) return prev;
-          return [...prev, msg];
-        });
-        if (!fromMe) socket.emit('mark_read', { otherUserId: activeConvo.otherUserId });
+      if (activeConvo && (msg.sender === activeConvo.otherUserId || msg.receiver === activeConvo.otherUserId)) {
+        setMessages(prev => [...prev, msg]);
+        socket.emit('mark_read', { otherUserId: activeConvo.otherUserId });
       }
       // Update conversations list
       setConversations(prev => {
-        const otherId = fromMe ? msg.receiver.toString() : msg.sender.toString();
+        const otherId = msg.sender === myId ? msg.receiver : msg.sender;
         const idx = prev.findIndex(c => c.otherUserId.toString() === otherId);
         if (idx >= 0) {
           const updated = [...prev];
-          updated[idx] = { 
-            ...updated[idx], 
-            lastMessage: msg.content || (msg.image ? 'Sent an image' : ''), 
-            lastMessageAt: msg.createdAt,
-            unreadCount: (!fromMe && (!activeConvo || activeConvo.otherUserId !== otherId)) ? (updated[idx].unreadCount + 1) : updated[idx].unreadCount
-          };
+          updated[idx] = { ...updated[idx], lastMessage: msg.content, lastMessageAt: msg.createdAt };
           // Move to top
           const item = updated.splice(idx, 1)[0];
           return [item, ...updated];
-        } else {
-          // New conversation from someone
-          return [{
-            conversationId: msg.conversationId,
-            otherUserId: otherId,
-            otherUserName: msg.senderName || 'Researcher',
-            lastMessage: msg.content || (msg.image ? 'Sent an image' : ''),
-            lastMessageAt: msg.createdAt,
-            unreadCount: fromMe ? 0 : 1
-          }, ...prev];
         }
+        return prev;
       });
     };
 
     const handleSent = (msg) => {
-      if (activeConvo && msg.receiver.toString() === activeConvo.otherUserId.toString()) {
+      if (activeConvo && msg.receiver === activeConvo.otherUserId) {
         setMessages(prev => {
           if (prev.find(m => m._id === msg._id)) return prev;
           return [...prev, msg];
         });
       }
-      // Update conversations list for the sender's own UI
-      setConversations(prev => {
-        const otherId = msg.receiver.toString();
-        const idx = prev.findIndex(c => c.otherUserId.toString() === otherId);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = { ...updated[idx], lastMessage: msg.content || (msg.image ? 'Sent an image' : ''), lastMessageAt: msg.createdAt };
-          const item = updated.splice(idx, 1)[0];
-          return [item, ...updated];
-        } else {
-          // New conversation - trigger a refresh for this contact
-          api.get(`/api/messages/${otherId}`).then(res => setMessages(res.data));
-          return [{
-            conversationId: msg.conversationId,
-            otherUserId: msg.receiver,
-            otherUserName: activeConvo?.otherUserName || 'User',
-            lastMessage: msg.content || (msg.image ? 'Sent an image' : ''),
-            lastMessageAt: msg.createdAt,
-            unreadCount: 0
-          }, ...prev];
-        }
-      });
     };
 
     const handleTyping = ({ userId }) => {
@@ -187,16 +145,57 @@ export default function Messaging() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = () => {
-    if ((!newMsg.trim() && !selectedImage) || !socket || !activeConvo) return;
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearImage = () => {
+    setImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleSend = async () => {
+    if ((!newMsg.trim() && !image) || !socket || !activeConvo) return;
+    
+    let imageUrl = '';
+    let messageType = 'text';
+
+    if (image) {
+      try {
+        const formData = new FormData();
+        formData.append('image', image);
+        const res = await api.post('/api/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        imageUrl = res.data.url;
+        messageType = 'image';
+      } catch (err) {
+        alert('Failed to upload image');
+        return;
+      }
+    }
+
     socket.emit('send_message', {
       receiverId: activeConvo.otherUserId,
-      content: newMsg.trim(),
-      image: selectedImage
+      content: newMsg.trim() || (messageType === 'image' ? 'Sent an image' : ''),
+      messageType,
+      imageUrl
     });
+    
     socket.emit('stop_typing', { receiverId: activeConvo.otherUserId });
     setNewMsg('');
-    setSelectedImage(null);
+    clearImage();
   };
 
   const handleKeyDown = (e) => {
@@ -366,33 +365,15 @@ export default function Messaging() {
                         lineHeight: 1.5,
                         wordBreak: 'break-word',
                       }}>
-                         {msg.image && (
-                           <div style={{ 
-                             margin: '-10px -16px 8px -16px',
-                             overflow: 'hidden',
-                             borderTopLeftRadius: isMine ? 18 : 18,
-                             borderTopRightRadius: isMine ? 18 : 18,
-                             borderBottomLeftRadius: isMine ? 4 : 18,
-                             borderBottomRightRadius: isMine ? 18 : 4,
-                           }}>
-                             <img 
-                               src={msg.image} 
-                               alt="Shared" 
-                               style={{ 
-                                 width: '100%',
-                                 maxWidth: 320, 
-                                 display: 'block',
-                                 maxHeight: 400, 
-                                 objectFit: 'cover',
-                                 cursor: 'pointer',
-                                 transition: 'transform 0.3s ease'
-                               }} 
-                               onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                               onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                               onClick={() => window.open(msg.image, '_blank')}
-                             />
-                           </div>
-                         )}
+                        {msg.imageUrl && (
+                          <div style={{ marginBottom: msg.content ? 8 : 0 }}>
+                            <img 
+                              src={msg.imageUrl.startsWith('http') ? msg.imageUrl : `${api.defaults.baseURL}${msg.imageUrl}`} 
+                              alt="Sent image" 
+                              style={{ maxWidth: '100%', borderRadius: 8, display: 'block' }} 
+                            />
+                          </div>
+                        )}
                         {msg.content && <div>{msg.content}</div>}
                       </div>
                       <div style={{
@@ -415,115 +396,50 @@ export default function Messaging() {
 
             {/* Input */}
             <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-color)' }}>
-              {/* Image Preview */}
-              {selectedImage && (
+              {imagePreview && (
                 <div style={{ position: 'relative', marginBottom: 12, display: 'inline-block' }}>
-                  <img src={selectedImage} alt="Selected" style={{ maxHeight: 100, borderRadius: 8, border: '1px solid var(--border-color)' }} />
-                  <button 
-                    onClick={() => setSelectedImage(null)}
-                    style={{ position: 'absolute', top: -8, right: -8, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    ×
-                  </button>
+                  <img src={imagePreview} alt="Preview" style={{ height: 100, borderRadius: 8, border: '1px solid var(--border-color)' }} />
+                  <button onClick={clearImage} style={{
+                    position: 'absolute', top: -8, right: -8, background: '#ef4444', color: 'white',
+                    border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10
+                  }}>X</button>
                 </div>
               )}
-
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                 <input 
                   type="file" 
                   accept="image/*" 
+                  ref={fileInputRef} 
                   style={{ display: 'none' }} 
-                  ref={fileInputRef}
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => setSelectedImage(reader.result);
-                      reader.readAsDataURL(file);
-                    }
+                  onChange={handleImageChange}
+                />
+                <button 
+                  onClick={() => fileInputRef.current.click()}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                >
+                  <ImageIcon size={22} />
+                </button>
+                <input
+                  type="text"
+                  value={newMsg}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Write a message..."
+                  style={{
+                    flex: 1, padding: '12px 18px', borderRadius: 24,
+                    border: '1px solid var(--border-color)', outline: 'none',
+                    fontSize: 14, background: '#f8fafc', color: 'var(--text-primary)'
                   }}
                 />
-                <div style={{ position: 'relative' }}>
-                  <button 
-                    className="btn-secondary"
-                    title="Attachments"
-                    style={{ 
-                      padding: 10, 
-                      borderRadius: '50%', 
-                      color: 'var(--text-secondary)', 
-                      background: '#f1f5f9',
-                      border: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s'
-                    }}
-                    onClick={() => fileInputRef.current.click()}
-                  >
-                    <ImageIcon size={22} color="#0284c7" />
-                  </button>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    style={{ display: 'none' }} 
-                    ref={fileInputRef}
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => setSelectedImage(reader.result);
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                  />
-                </div>
-
-                <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <input
-                    type="text"
-                    value={newMsg}
-                    onChange={handleInputChange}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Type a message..."
-                    style={{
-                      flex: 1, 
-                      padding: '12px 18px', 
-                      borderRadius: 24,
-                      border: '1px solid var(--border-color)', 
-                      outline: 'none',
-                      fontSize: 14, 
-                      background: '#f8fafc',
-                      transition: 'all 0.2s',
-                    }}
-                    onFocus={(e) => { e.target.style.borderColor = 'var(--accent-color)'; e.target.style.background = 'white'; }}
-                    onBlur={(e) => { e.target.style.borderColor = 'var(--border-color)'; e.target.style.background = '#f8fafc'; }}
-                  />
-                </div>
-
                 <button
                   className="btn-primary"
                   onClick={handleSend}
-                  disabled={(!newMsg.trim() && !selectedImage) || !isConnected}
-                  style={{ 
-                    padding: '10px 20px', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 8, 
-                    borderRadius: 24,
-                    background: (!newMsg.trim() && !selectedImage) ? '#cbd5e1' : 'var(--accent-color)',
-                    border: 'none',
-                    fontWeight: 600,
-                    transition: 'all 0.2s'
-                  }}
+                  disabled={(!newMsg.trim() && !image) || !isConnected}
+                  style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 24 }}
                 >
-                  <Send size={18} /> Send
+                  <Send size={16} /> Send
                 </button>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, paddingLeft: 56 }}>
-                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#0284c7' }}></div>
-                  Direct access to: <span style={{ color: '#0284c7', fontWeight: 600 }}>OneDrive\Pictures</span>
-                </div>
               </div>
             </div>
           </>

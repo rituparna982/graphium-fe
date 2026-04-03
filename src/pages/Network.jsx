@@ -245,7 +245,7 @@ export default function Network() {
       {/* Collaboration Request Modal */}
       {requestModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: 'white', borderRadius: 12, padding: 28, width: '100%', maxWidth: 460 }}>
+          <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: 28, width: '100%', maxWidth: 460, border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700 }}>Send Collaboration Request</h3>
               <X size={20} style={{ cursor: 'pointer' }} onClick={() => { setRequestModal(null); setMsgText(''); setTopicText(''); }} />
@@ -257,7 +257,7 @@ export default function Network() {
                 placeholder="e.g. Quantum Computing, ML for Biology..."
                 value={topicText}
                 onChange={e => setTopicText(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 14 }}
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 14, background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
               />
             </div>
             <div style={{ marginBottom: 20 }}>
@@ -267,7 +267,7 @@ export default function Network() {
                 value={msgText}
                 onChange={e => setMsgText(e.target.value)}
                 rows={4}
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 14, resize: 'vertical' }}
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 14, resize: 'vertical', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
               />
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>

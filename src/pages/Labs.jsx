@@ -100,19 +100,8 @@ export default function Labs() {
         <div className="card" style={{ padding: 24, marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showCreate ? 20 : 0 }}>
             <h1 style={{ fontSize: 22, fontWeight: 700 }}>Research Labs</h1>
-            <button 
-              className={showCreate ? "btn-secondary" : "btn-primary"} 
-              onClick={() => setShowCreate(!showCreate)} 
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 6,
-                backgroundColor: showCreate ? '#ef4444' : undefined,
-                color: showCreate ? 'white' : undefined,
-                borderColor: showCreate ? '#ef4444' : undefined
-              }}
-            >
-              {showCreate ? <X size={16} /> : <Plus size={16} />} {showCreate ? 'Cancel' : 'Host a Lab'}
+            <button className="btn-primary" onClick={() => setShowCreate(!showCreate)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Plus size={16} /> {showCreate ? 'Cancel' : 'Host a Lab'}
             </button>
           </div>
 
@@ -153,7 +142,7 @@ export default function Labs() {
           const isExpanded = expandedLab === lab._id;
 
           return (
-            <div key={lab._id} className="card lab-card" onClick={() => amMember && window.open(`/lab/${lab._id}`, '_blank')} style={{ padding: 24, marginBottom: 16, cursor: amMember ? 'pointer' : 'default' }}>
+            <div key={lab._id} className="card" style={{ padding: 24, marginBottom: 16 }}>
               <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                 <div className="item-icon" style={{ background: 'var(--accent-light)', flexShrink: 0 }}>
                   <Microscope color="var(--accent-color)" />
@@ -245,6 +234,19 @@ export default function Labs() {
             </div>
           );
         })}
+
+        {/* Grants Section */}
+        <div className="card" style={{ padding: 24 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 20 }}>Active Grants</h2>
+          <div className="item-card">
+            <div className="item-icon" style={{ background: '#fef3c7', color: '#f59e0b' }}><Award /></div>
+            <div className="item-content">
+              <h3>NSF Quantum Leap Challenge Institute</h3>
+              <div className="item-meta">National Science Foundation • $1.2M • 2024–2027</div>
+              <div className="item-description">Funding to accelerate hybrid AI-Quantum physics simulations.</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Announcement Modal */}

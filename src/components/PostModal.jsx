@@ -63,11 +63,17 @@ export default function PostModal({ isOpen, onClose, user, profile, onPostSucces
     
     setIsPosting(true);
     try {
-      const payload = { 
-        content, 
-        category: activeCategory,
-        photos: imagePreview ? [imagePreview] : [] 
-      };
+      let imageUrl = '';
+      if (image) {
+        const formData = new FormData();
+        formData.append('image', image);
+        const uploadRes = await api.post('/api/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        imageUrl = uploadRes.data.url;
+      }
+
+      const payload = { content, category: activeCategory, imageUrl };
 
       // Attach category-specific data
       if (activeCategory === 'paper' && paperFields.title) {
@@ -324,12 +330,7 @@ export default function PostModal({ isOpen, onClose, user, profile, onPostSucces
               ref={fileInputRef}
               onChange={handleImageChange}
             />
-            <ImageIcon 
-              className="toolbar-icon" 
-              size={20} 
-              onClick={() => fileInputRef.current.click()} 
-              style={{ cursor: 'pointer' }}
-            />
+            <ImageIcon className="toolbar-icon" size={20} onClick={() => fileInputRef.current.click()} />
             <Video className="toolbar-icon" size={20} />
             <Hash className="toolbar-icon" size={20} />
             <MoreHorizontal className="toolbar-icon" size={20} />
@@ -343,11 +344,11 @@ export default function PostModal({ isOpen, onClose, user, profile, onPostSucces
             <button 
               className="btn-primary" 
               onClick={handleSubmit}
-              disabled={(!content.trim() && !imagePreview) || isPosting}
+              disabled={(!content.trim() && !image) || isPosting}
               style={{
                 borderRadius: '24px',
                 padding: '6px 16px',
-                opacity: (!content.trim() && !imagePreview) ? 0.5 : 1
+                opacity: (!content.trim() && !image) ? 0.5 : 1
               }}
             >
               {isPosting ? 'Posting...' : 'Post'}
