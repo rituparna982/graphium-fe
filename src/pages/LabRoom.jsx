@@ -12,7 +12,7 @@ export default function LabRoom() {
   const { labId } = useParams();
   const { user } = useAuth();
   const [lab, setLab] = useState(null);
-  const [activeTab, setActiveTab] = useState('stream'); // 'stream', 'classwork', 'people'
+  const [activeTab, setActiveTab] = useState('stream'); // 'stream', 'work', 'people'
   const [loading, setLoading] = useState(true);
   const [postText, setPostText] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -86,7 +86,7 @@ export default function LabRoom() {
 
       {/* Navigation */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 40, marginBottom: 30, borderBottom: '1px solid var(--border-color)' }}>
-        {['stream', 'classwork', 'people'].map(tab => (
+        {['stream', 'work', 'people'].map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -172,7 +172,7 @@ export default function LabRoom() {
             </div>
           )}
 
-          {activeTab === 'classwork' && (
+          {activeTab === 'work' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ fontSize: 20, fontWeight: 700 }}>Shared Materials</h2>
