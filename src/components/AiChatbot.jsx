@@ -5,7 +5,7 @@ import api from '../api/axios';
 export default function AiChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'ai', text: 'Hello! I am Graphium AI, your research assistant. How can I help with your scientific discovery today?' }
+    { role: 'ai', text: 'Hello! I am Ai, your research assistant. How can I help with your scientific discovery today?' }
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -70,7 +70,7 @@ export default function AiChatbot() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                <Sparkles size={20} />
-               <span style={{ fontWeight: 800, fontSize: 15 }}>Ask Graphium AI</span>
+               <span style={{ fontWeight: 800, fontSize: 15 }}>Ask Ai</span>
             </div>
             <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: 4 }}>
               <X size={20} />
@@ -131,7 +131,7 @@ export default function AiChatbot() {
             <button onClick={() => setInputText('How does this paper approach methodology?')} style={{ fontSize: 10, padding: '4px 10px', borderRadius: 12, background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', color: '#64748b' }}>
                Methodology?
             </button>
-            <button onClick={() => setInputText('Brainstorm new research ideas in Quantum AI')} style={{ fontSize: 10, padding: '4px 10px', borderRadius: 12, background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', color: '#64748b' }}>
+            <button onClick={() => setInputText('Brainstorm new research ideas in Ai')} style={{ fontSize: 10, padding: '4px 10px', borderRadius: 12, background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', color: '#64748b' }}>
                Ideas?
             </button>
           </div>
